@@ -1,0 +1,51 @@
+# Jeu d'évaluation de la recherche.
+#
+# Pour chaque question, `expected_pmids` liste les publications qui *devraient*
+# figurer parmi les passages retrouvés. On mesure le rappel : la génération ne
+# peut pas être correcte si la recherche n'a pas ramené la bonne source.
+#
+# Les questions couvrent trois régimes volontairement distincts :
+#   - sémantique  : reformulation, aucun terme exact partagé
+#   - lexical     : symbole de gène ou coordonnée cytogénétique exacts
+#   - hors corpus : doit déclencher un refus
+
+questions:
+  - q: "Quel est le lien entre les mutations SHANK et la sévérité de la déficience intellectuelle ?"
+    expected_pmids: ["25188300"]
+    regime: semantic
+
+  - q: "MARCH6"
+    expected_pmids: ["31664039"]
+    regime: lexical
+
+  - q: "Quelles expansions de répétitions ont été associées à l'épilepsie myoclonique familiale ?"
+    expected_pmids: ["31664039"]
+    regime: semantic
+
+  - q: "22q13"
+    expected_pmids: ["36822569", "29263841"]
+    regime: lexical
+
+  - q: "CNTN6"
+    expected_pmids: ["27166760"]
+    regime: lexical
+
+  - q: "Quel est l'effet des variations du nombre de copies sur les capacités cognitives générales ?"
+    expected_pmids: ["29562078"]
+    regime: semantic
+
+  - q: "Que sait-on de l'autisme dans les îles Féroé ?"
+    expected_pmids: ["30675382"]
+    regime: semantic
+
+  - q: "ELMOD3 et surdité"
+    expected_pmids: ["30284680"]
+    regime: lexical
+
+  - q: "Y a-t-il un lien entre synesthésie et traits autistiques ?"
+    expected_pmids: ["30639511"]
+    regime: semantic
+
+  - q: "Quelle est la capitale du Portugal ?"
+    expected_pmids: []
+    regime: out_of_corpus

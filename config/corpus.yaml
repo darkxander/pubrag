@@ -1,0 +1,42 @@
+# Corpus : publications d'Alexandre Mathieu indexées par PubMed.
+#
+# Pour ajouter une publication, il suffit d'ajouter son PMID ici puis de
+# relancer `pubrag ingest`. Aucun texte n'est stocké dans ce dépôt : tout est
+# récupéré à l'exécution depuis les API publiques du NCBI.
+
+pmids:
+  - "39606373"  # Moreau 2024 — Neuroimaging, early-onset restrictive eating disorders
+  - "37365347"  # Rolland 2023 — Phenotypic effects of genetic variants associated with autism (Nat Med)
+  - "36822569"  # Vitrac 2023 — Dissecting the 22q13 region, Phelan-McDermid
+  - "33414449"  # Pagan 2021 — Phenol sulfotransferase & hyperserotonemia in autism
+  - "31664039"  # Florian 2019 — Unstable TTTTA/TTTCA expansions in MARCH6 (FAME3)
+  - "30675382"  # Leblond 2019 — Rare and common variants, autism in the Faroe Islands
+  - "30639511"  # Bouvet 2019 — Synesthesia & autistic features in a large family
+  - "30284680"  # Lahbib 2019 — Homozygous 2p11.2 deletion, ELMOD3, hearing loss
+  - "29562078"  # Huguet 2018 — Effect sizes of CNVs on general intelligence (JAMA Psychiatry)
+  - "29263841"  # Tabet 2017 — Framework to identify contributing genes, Phelan-McDermid
+  - "27166760"  # Mercati 2017 — CNTN6 mutations, auditory sensory perception in autism
+  - "26334118"  # Maruani 2015 — 11q24.2-25 micro-rearrangements in ASD
+  - "25188300"  # Leblond 2014 — Meta-analysis of SHANK mutations in ASD (PLoS Genet)
+
+# Découpage des documents
+chunking:
+  target_tokens: 220      # approximation : ~4 caractères par token
+  overlap_tokens: 40
+
+# Récupération
+retrieval:
+  top_k: 6                # passages transmis au modèle
+  candidates_per_branch: 20
+  rrf_k: 60               # constante de la Reciprocal Rank Fusion
+
+# Garde-fous
+guardrails:
+  min_top_score: 0.28     # en dessous, on refuse de répondre
+  require_citations: true
+
+# Génération
+generation:
+  model: "claude-sonnet-5"
+  max_tokens: 1200
+  temperature: 0.0
