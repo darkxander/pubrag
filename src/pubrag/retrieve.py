@@ -13,12 +13,13 @@ une base vectorielle. Le jour où le corpus dépasse ~100 000 passages, seule la
 méthode `_dense_scores` est à remplacer — l'interface ne bouge pas.
 
 Pourquoi un plafond de passages par article. Le corpus mélange des résumés
-(2-3 passages) et des textes intégraux (24-84 passages). Sans plafond, un seul
-long article peut occuper toutes les places du contexte : mesuré sur la question
-« lien entre mutations SHANK et sévérité de la déficience intellectuelle », les
-six passages venaient tous de l'article CNTN6, et la méta-analyse SHANK — la
-bonne source — était absente. Avec un plafond de 2, elle remonte, et le contexte
-couvre trois articles au lieu d'un.
+(2-4 passages) et des textes intégraux (34-93 passages). Sans plafond, un long
+article occupe souvent tout le contexte : mesuré, 5 questions d'évaluation sur 9
+recevaient leurs six passages d'un seul article ; avec un plafond de 2, aucune.
+C'est un compromis, pas un correctif : le plafond ne change pas le rappel sur ce
+jeu, il élargit le contexte au prix de la profondeur sur un article donné. Sans
+évaluation de la génération, rien ne dit encore lequel des deux sert le mieux
+les réponses.
 """
 
 from __future__ import annotations
@@ -67,8 +68,8 @@ def _capped_order(order, chunks: list[Chunk], limit: int, max_per_doc: int | Non
     """Premiers `limit` indices d'un classement, au plus `max_per_doc` par article.
 
     Appliquer le plafond *pendant* la constitution du vivier, et non seulement à
-    la fin, est ce qui empêche un long article de remplir à lui seul les
-    candidats : mesuré, l'article CNTN6 occupait les 40 premières places denses.
+    la fin, empêche un long article de remplir à lui seul les candidats — sans
+    quoi le plafond final n'aurait plus rien d'autre à proposer.
     """
     picked: list[int] = []
     per_doc: dict[str, int] = {}

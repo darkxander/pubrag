@@ -5,13 +5,14 @@ Trois contrôles, appliqués à des moments différents.
 1. *Avant* la génération — si la question ne présente aucun « relief » sur le
    corpus, elle en sort manifestement. On refuse sans appeler le modèle.
 
-   Ce filtre amont est une **économie d'appels, pas le filet de sécurité**. Les
-   mesures (README, section Évaluation) montrent qu'aucun seuil — ni sur le
-   cosinus brut, ni sur le score BM25, ni sur le relief — ne sépare parfaitement
-   les questions couvertes des autres avec ce modèle. Le seuil est donc réglé
-   pour ne **jamais** refuser une question valide : un faux accepté coûte un
-   appel au modèle, qui refusera lui-même faute d'extrait pertinent ; un faux
-   refus perd une réponse juste. Coûts asymétriques, réglage asymétrique.
+   Ce filtre amont est une **économie d'appels, pas le filet de sécurité**. Le
+   cosinus brut ne sépare pas les questions couvertes des autres (mesuré : une
+   question de génétique hors corpus dépasse une question valide). Le relief les
+   sépare sur les 15 questions d'évaluation — mais sur un jeu aussi petit, rien
+   ne garantit qu'il séparera la suivante. Le seuil est donc placé plus près du
+   groupe hors corpus : un faux accepté coûte un appel au modèle, qui refusera
+   lui-même faute d'extrait pertinent ; un faux refus perd une réponse juste.
+   Coûts asymétriques, réglage asymétrique.
 
 2. *Après* la génération — la réponse doit citer au moins un PMID.
 3. *Après* la génération — chaque PMID cité doit faire partie des passages

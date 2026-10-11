@@ -33,10 +33,12 @@ retrieval:
 
 # Garde-fous
 guardrails:
-  # Relief = meilleur cosinus − cosinus médian. Réglé SOUS la plus basse valeur
-  # observée pour une question valide (0,068, « MARCH6 ») : ce filtre ne doit
-  # jamais refuser une bonne question. Voir guardrails.py.
-  min_relief: 0.065
+  # Relief = meilleur cosinus − cosinus médian. Mesuré sur les 15 questions
+  # d'évaluation : valides de 0,107 à 0,189, hors corpus de 0,058 à 0,081.
+  # Seuil placé dans cet écart, plus près du groupe hors corpus : un faux refus
+  # perd une bonne réponse, un faux accepté ne coûte qu'un appel au modèle.
+  # Calibré sur peu de questions et pour ce modèle d'encodage : à revalider.
+  min_relief: 0.09
   require_citations: true
 
 # Génération

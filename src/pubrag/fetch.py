@@ -135,6 +135,39 @@ class NCBIClient:
         return body if _REDISTRIBUTABLE.search(licence) else ""
 
 
+# Sections sans contenu scientifique, exclues de l'indexation. La plus
+# volumineuse est l'information supplémentaire : pour la méta-analyse SHANK
+# (PMC4154644), ses légendes de figures et de tableaux représentent 57
+# paragraphes sur 96 — plus de la moitié du « texte intégral ».
+_SKIPPED_SEC_TYPES = re.compile(r"supplementary|COI|conflict|funding|acknowledg|author", re.I)
+_SKIPPED_TITLES = re.compile(
+    r"supplementary|supporting information|competing interest|conflicts? of interest|"
+    r"author.{0,3}contribution|acknowledg|funding|data availability|abbreviations",
+    re.I,
+)
+
+
+def _is_boilerplate(section: ET.Element) -> bool:
+    title = section.find("title")
+    title_text = "".join(title.itertext()) if title is not None else ""
+    return bool(
+        _SKIPPED_SEC_TYPES.search(section.get("sec-type", "") or "")
+        or _SKIPPED_TITLES.search(title_text)
+    )
+
+
+def _content_paragraphs(node: ET.Element):
+    """Paragraphes d'un nœud, en descendant dans les sections non exclues."""
+    for child in node:
+        if child.tag == "p":
+            yield child
+        elif child.tag == "sec":
+            if not _is_boilerplate(child):
+                yield from _content_paragraphs(child)
+        elif child.tag not in ("supplementary-material", "fn-group", "ack"):
+            yield from _content_paragraphs(child)
+
+
 def _extract_license_and_body(root: ET.Element) -> tuple[str, str]:
     """Extrait la licence déclarée et le corps de l'article d'un XML PMC.
 
@@ -152,7 +185,9 @@ def _extract_license_and_body(root: ET.Element) -> tuple[str, str]:
     body_node = root.find(".//body")
     paragraphs: list[str] = []
     if body_node is not None:
-        paragraphs = [" ".join("".join(p.itertext()).split()) for p in body_node.iter("p")]
+        paragraphs = [
+            " ".join("".join(p.itertext()).split()) for p in _content_paragraphs(body_node)
+        ]
 
     return " ".join(licence_parts), "\n\n".join(p for p in paragraphs if len(p) > 40)
 
@@ -178,7 +213,17 @@ def _parse_pubmed_article(node: ET.Element) -> Document:
     ]
     author_line = authors[0] + " et al." if len(authors) > 3 else ", ".join(authors)
 
-    ids = {i.get("IdType"): _text_of(i) for i in node.iter("ArticleId")}
+    # Uniquement la liste d'identifiants de l'article lui-même. `node.iter` aurait
+    # aussi parcouru la bibliographie (PubmedData/ReferenceList), dont chaque
+    # référence porte ses propres identifiants : l'article recevait alors le
+    # PMCID de sa dernière référence citée, et l'on indexait le texte d'un autre
+    # article sous son PMID. Bug réel, trouvé en lisant les passages retrouvés.
+    own_ids = node.find("PubmedData/ArticleIdList")
+    ids = (
+        {i.get("IdType"): _text_of(i) for i in own_ids.findall("ArticleId")}
+        if own_ids is not None
+        else {}
+    )
     year = (
         _text_of(node.find(".//PubDate/Year")) or _text_of(node.find(".//PubDate/MedlineDate"))[:4]
     )
