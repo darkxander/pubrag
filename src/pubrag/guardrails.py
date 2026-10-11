@@ -2,9 +2,17 @@
 
 Trois contrôles, appliqués à des moments différents.
 
-1. *Avant* la génération — si le meilleur passage retrouvé a un cosinus trop
-   faible, la question sort du corpus. On refuse sans appeler le modèle : cela
-   évite une réponse plausible mais sans fondement, et économise l'appel.
+1. *Avant* la génération — si la question ne présente aucun « relief » sur le
+   corpus, elle en sort manifestement. On refuse sans appeler le modèle.
+
+   Ce filtre amont est une **économie d'appels, pas le filet de sécurité**. Les
+   mesures (README, section Évaluation) montrent qu'aucun seuil — ni sur le
+   cosinus brut, ni sur le score BM25, ni sur le relief — ne sépare parfaitement
+   les questions couvertes des autres avec ce modèle. Le seuil est donc réglé
+   pour ne **jamais** refuser une question valide : un faux accepté coûte un
+   appel au modèle, qui refusera lui-même faute d'extrait pertinent ; un faux
+   refus perd une réponse juste. Coûts asymétriques, réglage asymétrique.
+
 2. *Après* la génération — la réponse doit citer au moins un PMID.
 3. *Après* la génération — chaque PMID cité doit faire partie des passages
    effectivement transmis. C'est le contrôle décisif : il détecte le cas où le
@@ -38,15 +46,15 @@ def extract_citations(answer: str) -> set[str]:
     return set(CITATION.findall(answer))
 
 
-def check_retrieval(hits, min_top_score: float) -> Verdict:
-    """Contrôle amont : la question est-elle couverte par le corpus ?"""
+def check_retrieval(hits, min_relief: float) -> Verdict:
+    """Contrôle amont : la question présente-t-elle un pic sur le corpus ?"""
     if not hits:
         return Verdict(ok=False, reasons=["aucun passage retrouvé"])
-    best = max(hit.dense_score for hit in hits)
-    if best < min_top_score:
+    relief = hits[0].relief
+    if relief < min_relief:
         return Verdict(
             ok=False,
-            reasons=[f"meilleur cosinus {best:.3f} < seuil {min_top_score:.3f}"],
+            reasons=[f"relief {relief:.3f} < seuil {min_relief:.3f} : question hors corpus"],
         )
     return Verdict(ok=True)
 

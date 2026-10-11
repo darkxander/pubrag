@@ -3,7 +3,7 @@ from pubrag.guardrails import REFUSAL
 from pubrag.pipeline import Pipeline
 
 
-def make_config(min_top_score: float) -> Config:
+def make_config(min_relief: float) -> Config:
     return Config(
         pmids=[],
         target_tokens=60,
@@ -11,7 +11,8 @@ def make_config(min_top_score: float) -> Config:
         top_k=3,
         candidates_per_branch=10,
         rrf_k=60,
-        min_top_score=min_top_score,
+        max_per_doc=2,
+        min_relief=min_relief,
         require_citations=True,
         model="claude-sonnet-5",
         max_tokens=500,

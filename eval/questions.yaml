@@ -49,3 +49,25 @@ questions:
   - q: "Quelle est la capitale du Portugal ?"
     expected_pmids: []
     regime: out_of_corpus
+
+  - q: "Quelle est la recette de la paella ?"
+    expected_pmids: []
+    regime: out_of_corpus
+
+  - q: "Who won the 2018 football world cup?"
+    expected_pmids: []
+    regime: out_of_corpus
+
+  - q: "Comment fonctionne un moteur diesel ?"
+    expected_pmids: []
+    regime: out_of_corpus
+
+  - q: "Quels sont les symptômes de la grippe ?"
+    expected_pmids: []
+    regime: out_of_corpus
+
+  # Piège volontaire : du domaine (génétique), mais hors du corpus. C'est le cas
+  # le plus difficile — et celui où l'on attend que le modèle refuse lui-même.
+  - q: "Explain how CRISPR gene editing works"
+    expected_pmids: []
+    regime: out_of_corpus

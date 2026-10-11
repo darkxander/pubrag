@@ -84,12 +84,13 @@ class Pipeline:
             top_k=self.config.top_k,
             candidates=self.config.candidates_per_branch,
             rrf_k=self.config.rrf_k,
+            max_per_doc=self.config.max_per_doc,
         )
 
     def ask(self, question: str) -> Answer:
         hits = self.retrieve(question)
 
-        upstream: Verdict = check_retrieval(hits, self.config.min_top_score)
+        upstream: Verdict = check_retrieval(hits, self.config.min_relief)
         if not upstream.ok:
             return Answer(question, REFUSAL, hits, refused=True, warnings=upstream.reasons)
 

@@ -42,7 +42,11 @@ class SentenceTransformerEmbedder:
         from sentence_transformers import SentenceTransformer  # import différé : dépendance lourde
 
         self._model = SentenceTransformer(model_name)
-        self.dimension = int(self._model.get_sentence_embedding_dimension())
+        # Méthode renommée dans les versions récentes de sentence-transformers.
+        dim = getattr(self._model, "get_embedding_dimension", None) or (
+            self._model.get_sentence_embedding_dimension
+        )
+        self.dimension = int(dim())
 
     def encode_documents(self, texts: list[str]) -> np.ndarray:
         vectors = self._model.encode(texts, batch_size=32, show_progress_bar=False)

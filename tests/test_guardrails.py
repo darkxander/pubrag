@@ -6,18 +6,18 @@ def test_extract_citations_handles_spacing():
 
 
 def test_retrieval_refuses_when_nothing_retrieved():
-    verdict = check_retrieval([], min_top_score=0.3)
+    verdict = check_retrieval([], min_relief=0.3)
     assert not verdict.ok
 
 
 def test_retrieval_refuses_below_threshold(hits):
-    verdict = check_retrieval(hits, min_top_score=0.99)
+    verdict = check_retrieval(hits, min_relief=0.99)
     assert not verdict.ok
     assert "seuil" in verdict.reasons[0]
 
 
 def test_retrieval_accepts_above_threshold(hits):
-    assert check_retrieval(hits, min_top_score=-1.0).ok
+    assert check_retrieval(hits, min_relief=-1.0).ok
 
 
 def test_answer_without_citation_is_flagged(hits):

@@ -43,3 +43,53 @@ def test_search_respects_top_k(retriever):
 def test_hits_are_sorted_by_fused_score(retriever):
     scores = [h.score for h in retriever.search("SHANK3", top_k=5)]
     assert scores == sorted(scores, reverse=True)
+
+
+def test_relief_is_computed_and_shared_by_all_hits(retriever):
+    hits = retriever.search("SHANK3", top_k=3)
+    assert hits
+    assert all(h.relief == hits[0].relief for h in hits)
+    assert hits[0].relief >= 0.0
+
+
+def test_per_document_cap_limits_monopolisation(embedder):
+    """Un long article ne doit pas occuper tout le contexte."""
+    from pubrag.chunk import Chunk
+
+    long_doc = [
+        Chunk(f"111:{i}", "111", "Long", "C", i, f"shank synapse passage {i}") for i in range(10)
+    ]
+    short_doc = [Chunk("222:0", "222", "Short", "C", 0, "shank synapse other study")]
+    chunks = long_doc + short_doc
+    retriever = HybridRetriever(
+        chunks, embedder.encode_documents([c.text for c in chunks]), embedder
+    )
+
+    capped = retriever.search("shank synapse", top_k=6, max_per_doc=2)
+    per_doc = {}
+    for h in capped:
+        per_doc[h.chunk.pmid] = per_doc.get(h.chunk.pmid, 0) + 1
+    assert per_doc.get("111", 0) <= 2
+    assert "222" in per_doc, "le second article doit trouver sa place"
+
+
+def test_cap_can_be_disabled(embedder):
+    from pubrag.chunk import Chunk
+
+    chunks = [Chunk(f"111:{i}", "111", "T", "C", i, f"shank passage {i}") for i in range(8)]
+    retriever = HybridRetriever(
+        chunks, embedder.encode_documents([c.text for c in chunks]), embedder
+    )
+    assert len(retriever.search("shank", top_k=5, max_per_doc=None)) == 5
+
+
+def test_tokenize_handles_french_accents():
+    """Régression : l'ancien motif découpait « sévérité » en « s », « v », « rit »."""
+    tokens = tokenize("sévérité de la déficience intellectuelle")
+    assert "severite" in tokens and "deficience" in tokens
+    assert not any(len(t) == 1 for t in tokens)
+
+
+def test_tokenize_drops_french_and_english_stopwords():
+    tokens = tokenize("Quel est le lien entre les mutations SHANK et the autism?")
+    assert tokens == ["lien", "mutations", "shank", "autism"]

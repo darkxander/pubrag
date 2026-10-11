@@ -11,10 +11,20 @@ quelques centaines de passages : un produit matriciel NumPy sur (N, 384) prend
 moins d'une milliseconde, soit moins que la surcharge d'un appel à FAISS ou à
 une base vectorielle. Le jour où le corpus dépasse ~100 000 passages, seule la
 méthode `_dense_scores` est à remplacer — l'interface ne bouge pas.
+
+Pourquoi un plafond de passages par article. Le corpus mélange des résumés
+(2-3 passages) et des textes intégraux (24-84 passages). Sans plafond, un seul
+long article peut occuper toutes les places du contexte : mesuré sur la question
+« lien entre mutations SHANK et sévérité de la déficience intellectuelle », les
+six passages venaient tous de l'article CNTN6, et la méta-analyse SHANK — la
+bonne source — était absente. Avec un plafond de 2, elle remonte, et le contexte
+couvre trois articles au lieu d'un.
 """
 
 from __future__ import annotations
 
+import re
+import unicodedata
 from dataclasses import dataclass
 
 import numpy as np
@@ -23,19 +33,64 @@ from rank_bm25 import BM25Okapi
 from .chunk import Chunk
 from .embed import Embedder
 
-_TOKEN = __import__("re").compile(r"[a-z0-9]+")
+_TOKEN = re.compile(r"[a-z0-9]+")
+
+# Mots-outils français et anglais. Sans cette liste, une question posée en
+# français contre un corpus anglais est classée par BM25 sur « est », « la »,
+# « le » : rares dans un texte anglais, donc d'IDF élevé, donc dominants — alors
+# qu'ils ne portent aucune information.
+_STOPWORDS = frozenset(
+    """
+    le la les un une des de du et est sont quel quelle quels quelles que qui quoi
+    dans pour par sur avec ce cet cette ces au aux en il elle on ne pas plus ou se
+    sa son ses leur leurs entre comment pourquoi ont été etre être fait sait y
+    the an of and or in on at to for with by is are was were be been being what
+    which who whom how why does do did this that these those it its from as about
+    into than then there their they them can could would should has have had
+    """.split()
+)
+
+
+def _strip_accents(text: str) -> str:
+    # « sévérité » → « severite » : sans cette normalisation, le motif ASCII
+    # découpait le mot en débris (« s », « v », « rit ») qui polluaient BM25.
+    decomposed = unicodedata.normalize("NFKD", text)
+    return "".join(c for c in decomposed if not unicodedata.combining(c))
 
 
 def tokenize(text: str) -> list[str]:
-    return _TOKEN.findall(text.lower())
+    tokens = _TOKEN.findall(_strip_accents(text.lower()))
+    return [t for t in tokens if len(t) > 1 and t not in _STOPWORDS]
+
+
+def _capped_order(order, chunks: list[Chunk], limit: int, max_per_doc: int | None) -> list[int]:
+    """Premiers `limit` indices d'un classement, au plus `max_per_doc` par article.
+
+    Appliquer le plafond *pendant* la constitution du vivier, et non seulement à
+    la fin, est ce qui empêche un long article de remplir à lui seul les
+    candidats : mesuré, l'article CNTN6 occupait les 40 premières places denses.
+    """
+    picked: list[int] = []
+    per_doc: dict[str, int] = {}
+    for index in order:
+        index = int(index)
+        pmid = chunks[index].pmid
+        if max_per_doc is not None and per_doc.get(pmid, 0) >= max_per_doc:
+            continue
+        per_doc[pmid] = per_doc.get(pmid, 0) + 1
+        picked.append(index)
+        if len(picked) == limit:
+            break
+    return picked
 
 
 @dataclass
 class Hit:
     chunk: Chunk
     score: float  # score de fusion (RRF), sans unité
-    dense_score: float  # cosinus, dans [-1, 1] — c'est lui qui sert de garde-fou
+    dense_score: float  # cosinus, dans [-1, 1]
     bm25_rank: int | None
+    relief: float = 0.0  # meilleur cosinus − cosinus médian ; sert au garde-fou amont
 
 
 class HybridRetriever:
@@ -52,18 +107,30 @@ class HybridRetriever:
         return self.embeddings @ self.embedder.encode_query(query)
 
     def search(
-        self, query: str, top_k: int = 6, candidates: int = 20, rrf_k: int = 60
+        self,
+        query: str,
+        top_k: int = 6,
+        candidates: int = 20,
+        rrf_k: int = 60,
+        max_per_doc: int | None = 2,
     ) -> list[Hit]:
         if not self.chunks:
             return []
 
         dense = self._dense_scores(query)
-        dense_order = np.argsort(-dense)[:candidates]
+        dense_order = _capped_order(np.argsort(-dense), self.chunks, candidates, max_per_doc)
+
+        # « Relief » : écart entre le meilleur passage et le passage médian. Une
+        # question hors sujet est uniformément moyenne avec tout le corpus ; une
+        # question couverte présente un pic net. Mesuré, ce signal sépare bien
+        # mieux les deux cas que le cosinus brut — voir guardrails.py.
+        relief = float(dense.max() - np.median(dense))
 
         bm25_order: list[int] = []
         if self._bm25 is not None:
             lexical = np.asarray(self._bm25.get_scores(tokenize(query)))
-            bm25_order = [i for i in np.argsort(-lexical)[:candidates] if lexical[i] > 0]
+            positive = [i for i in np.argsort(-lexical) if lexical[i] > 0]
+            bm25_order = _capped_order(positive, self.chunks, candidates, max_per_doc)
 
         # Reciprocal Rank Fusion : 1/(k + rang). On fusionne des rangs, pas des
         # scores — cosinus et BM25 n'ont ni la même échelle ni la même
@@ -75,14 +142,23 @@ class HybridRetriever:
             fused[int(index)] = fused.get(int(index), 0.0) + 1.0 / (rrf_k + rank + 1)
 
         bm25_rank_of = {int(index): rank for rank, index in enumerate(bm25_order)}
-        ordered = sorted(fused.items(), key=lambda item: -item[1])[:top_k]
 
-        return [
-            Hit(
-                chunk=self.chunks[index],
-                score=score,
-                dense_score=float(dense[index]),
-                bm25_rank=bm25_rank_of.get(index),
+        hits: list[Hit] = []
+        per_doc: dict[str, int] = {}
+        for index, score in sorted(fused.items(), key=lambda item: -item[1]):
+            pmid = self.chunks[index].pmid
+            if max_per_doc is not None and per_doc.get(pmid, 0) >= max_per_doc:
+                continue
+            per_doc[pmid] = per_doc.get(pmid, 0) + 1
+            hits.append(
+                Hit(
+                    chunk=self.chunks[index],
+                    score=score,
+                    dense_score=float(dense[index]),
+                    bm25_rank=bm25_rank_of.get(index),
+                    relief=relief,
+                )
             )
-            for index, score in ordered
-        ]
+            if len(hits) == top_k:
+                break
+        return hits

@@ -51,9 +51,15 @@ def main() -> int:
 
         if regime == "out_of_corpus":
             refusals_expected += 1
-            refused = not check_retrieval(hits, config.min_top_score).ok
+            refused = not check_retrieval(hits, config.min_relief).ok
             refusals_correct += int(refused)
-            rows.append((item["q"][:52], regime, "refus OK" if refused else "RÉPOND — à corriger"))
+            rows.append(
+                (
+                    item["q"][:52],
+                    regime,
+                    "refus amont" if refused else "→ modèle (refus attendu en aval)",
+                )
+            )
             continue
 
         recall = len(expected & retrieved) / len(expected)
@@ -76,7 +82,10 @@ def main() -> int:
         overall = sum(all_scores) / len(all_scores)
         print(f"  {'global'.ljust(13)} rappel@{args.k} moyen = {overall:.2f}")
     if refusals_expected:
-        print(f"  refus corrects : {refusals_correct}/{refusals_expected}")
+        print(
+            f"  hors corpus   refusés en amont : {refusals_correct}/{refusals_expected}"
+            f"  — les autres sont transmis au modèle, qui doit refuser faute d'extrait"
+        )
 
     # Code de sortie non nul si le rappel s'effondre : utilisable en CI.
     return 0 if not all_scores or sum(all_scores) / len(all_scores) >= 0.8 else 1
