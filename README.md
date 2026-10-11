@@ -1,5 +1,9 @@
 # pubrag
 
+[![CI](https://github.com/darkxander/pubrag/actions/workflows/ci.yml/badge.svg)](https://github.com/darkxander/pubrag/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.12-blue)
+![Licence](https://img.shields.io/badge/licence-MIT-green)
+
 Système de questions-réponses augmenté par la recherche (RAG) sur un corpus de
 publications scientifiques en génétique humaine, avec citation obligatoire des
 sources et refus explicite hors périmètre.
