@@ -40,13 +40,17 @@ def ingest(config: Config, offline: bool = False) -> tuple[int, int]:
     build_documents_frame(documents).to_parquet(config.documents_path, index=False)
 
     embedder = get_embedder(offline=offline)
-    chunks, embeddings = build_index(documents, embedder, config.target_tokens, config.overlap_tokens)
+    chunks, embeddings = build_index(
+        documents, embedder, config.target_tokens, config.overlap_tokens
+    )
     save_index(config.index_path, chunks, embeddings)
     return len(documents), len(chunks)
 
 
 class Pipeline:
-    def __init__(self, config: Config, embedder: Embedder, retriever: HybridRetriever, generator=None):
+    def __init__(
+        self, config: Config, embedder: Embedder, retriever: HybridRetriever, generator=None
+    ):
         self.config = config
         self.embedder = embedder
         self.retriever = retriever

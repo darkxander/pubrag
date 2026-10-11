@@ -110,7 +110,9 @@ class NCBIClient:
             f"{EUTILS}/efetch.fcgi",
             {"db": "pubmed", "id": ",".join(pmids), "retmode": "xml"},
         ).text
-        documents = [_parse_pubmed_article(node) for node in ET.fromstring(xml).iter("PubmedArticle")]
+        documents = [
+            _parse_pubmed_article(node) for node in ET.fromstring(xml).iter("PubmedArticle")
+        ]
 
         for document in documents:
             if document.pmcid:
@@ -150,10 +152,7 @@ def _extract_license_and_body(root: ET.Element) -> tuple[str, str]:
     body_node = root.find(".//body")
     paragraphs: list[str] = []
     if body_node is not None:
-        paragraphs = [
-            " ".join("".join(p.itertext()).split())
-            for p in body_node.iter("p")
-        ]
+        paragraphs = [" ".join("".join(p.itertext()).split()) for p in body_node.iter("p")]
 
     return " ".join(licence_parts), "\n\n".join(p for p in paragraphs if len(p) > 40)
 
@@ -180,13 +179,16 @@ def _parse_pubmed_article(node: ET.Element) -> Document:
     author_line = authors[0] + " et al." if len(authors) > 3 else ", ".join(authors)
 
     ids = {i.get("IdType"): _text_of(i) for i in node.iter("ArticleId")}
-    year = _text_of(node.find(".//PubDate/Year")) or _text_of(node.find(".//PubDate/MedlineDate"))[:4]
+    year = (
+        _text_of(node.find(".//PubDate/Year")) or _text_of(node.find(".//PubDate/MedlineDate"))[:4]
+    )
 
     return Document(
         pmid=pmid,
         title=_text_of(node.find(".//ArticleTitle")),
         abstract="\n\n".join(parts),
-        journal=_text_of(node.find(".//Journal/ISOAbbreviation")) or _text_of(node.find(".//Journal/Title")),
+        journal=_text_of(node.find(".//Journal/ISOAbbreviation"))
+        or _text_of(node.find(".//Journal/Title")),
         year=year,
         authors=author_line,
         doi=ids.get("doi", ""),

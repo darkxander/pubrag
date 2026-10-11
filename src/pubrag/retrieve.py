@@ -33,8 +33,8 @@ def tokenize(text: str) -> list[str]:
 @dataclass
 class Hit:
     chunk: Chunk
-    score: float          # score de fusion (RRF), sans unité
-    dense_score: float    # cosinus, dans [-1, 1] — c'est lui qui sert de garde-fou
+    score: float  # score de fusion (RRF), sans unité
+    dense_score: float  # cosinus, dans [-1, 1] — c'est lui qui sert de garde-fou
     bm25_rank: int | None
 
 
@@ -51,7 +51,9 @@ class HybridRetriever:
         # Vecteurs normalisés en amont : le produit scalaire est un cosinus.
         return self.embeddings @ self.embedder.encode_query(query)
 
-    def search(self, query: str, top_k: int = 6, candidates: int = 20, rrf_k: int = 60) -> list[Hit]:
+    def search(
+        self, query: str, top_k: int = 6, candidates: int = 20, rrf_k: int = 60
+    ) -> list[Hit]:
         if not self.chunks:
             return []
 

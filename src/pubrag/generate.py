@@ -25,7 +25,7 @@ def format_context(hits: list[Hit]) -> str:
     blocks = []
     for index, hit in enumerate(hits, start=1):
         blocks.append(
-            f"<extrait id=\"{index}\" pmid=\"{hit.chunk.pmid}\">\n"
+            f'<extrait id="{index}" pmid="{hit.chunk.pmid}">\n'
             f"Source : {hit.chunk.citation}\n\n"
             f"{hit.chunk.text}\n"
             f"</extrait>"
@@ -61,8 +61,7 @@ class Generator:
                 {
                     "role": "user",
                     "content": (
-                        f"Extraits du corpus :\n\n{format_context(hits)}\n\n"
-                        f"Question : {question}"
+                        f"Extraits du corpus :\n\n{format_context(hits)}\n\nQuestion : {question}"
                     ),
                 }
             ],

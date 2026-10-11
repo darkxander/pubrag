@@ -34,7 +34,9 @@ def main() -> int:
 
     config = load_config()
     pipeline = Pipeline.from_index(config, offline=args.offline)
-    questions = yaml.safe_load(Path(__file__).with_name("questions.yaml").read_text("utf-8"))["questions"]
+    questions = yaml.safe_load(Path(__file__).with_name("questions.yaml").read_text("utf-8"))[
+        "questions"
+    ]
 
     by_regime: dict[str, list[float]] = defaultdict(list)
     refusals_correct = 0
@@ -68,9 +70,11 @@ def main() -> int:
     all_scores = []
     for regime, scores in sorted(by_regime.items()):
         all_scores.extend(scores)
-        print(f"  {regime.ljust(13)} rappel@{args.k} moyen = {sum(scores) / len(scores):.2f}  (n={len(scores)})")
+        mean = sum(scores) / len(scores)
+        print(f"  {regime.ljust(13)} rappel@{args.k} moyen = {mean:.2f}  (n={len(scores)})")
     if all_scores:
-        print(f"  {'global'.ljust(13)} rappel@{args.k} moyen = {sum(all_scores) / len(all_scores):.2f}")
+        overall = sum(all_scores) / len(all_scores)
+        print(f"  {'global'.ljust(13)} rappel@{args.k} moyen = {overall:.2f}")
     if refusals_expected:
         print(f"  refus corrects : {refusals_correct}/{refusals_expected}")
 

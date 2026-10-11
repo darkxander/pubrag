@@ -5,9 +5,17 @@ from pubrag.pipeline import Pipeline
 
 def make_config(min_top_score: float) -> Config:
     return Config(
-        pmids=[], target_tokens=60, overlap_tokens=10, top_k=3, candidates_per_branch=10,
-        rrf_k=60, min_top_score=min_top_score, require_citations=True,
-        model="claude-sonnet-5", max_tokens=500, temperature=0.0,
+        pmids=[],
+        target_tokens=60,
+        overlap_tokens=10,
+        top_k=3,
+        candidates_per_branch=10,
+        rrf_k=60,
+        min_top_score=min_top_score,
+        require_citations=True,
+        model="claude-sonnet-5",
+        max_tokens=500,
+        temperature=0.0,
     )
 
 
@@ -35,7 +43,9 @@ def test_pipeline_refuses_without_calling_the_model(retriever, embedder):
 
 
 def test_pipeline_returns_sourced_answer(retriever, embedder):
-    pipeline = Pipeline(make_config(-1.0), embedder, retriever, FakeGenerator("réponse [PMID:{pmid}]"))
+    pipeline = Pipeline(
+        make_config(-1.0), embedder, retriever, FakeGenerator("réponse [PMID:{pmid}]")
+    )
     answer = pipeline.ask("SHANK3")
     assert not answer.refused
     assert answer.warnings == []
@@ -43,7 +53,9 @@ def test_pipeline_returns_sourced_answer(retriever, embedder):
 
 
 def test_pipeline_warns_on_uncited_answer(retriever, embedder):
-    pipeline = Pipeline(make_config(-1.0), embedder, retriever, FakeGenerator("réponse sans source"))
+    pipeline = Pipeline(
+        make_config(-1.0), embedder, retriever, FakeGenerator("réponse sans source")
+    )
     answer = pipeline.ask("SHANK3")
     assert not answer.refused
     assert answer.warnings

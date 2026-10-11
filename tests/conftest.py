@@ -29,7 +29,9 @@ def documents() -> list[Document]:
         ),
         Document(
             pmid="31664039",
-            title="Unstable TTTTA/TTTCA expansions in MARCH6 cause familial adult myoclonic epilepsy",
+            title=(
+                "Unstable TTTTA/TTTCA expansions in MARCH6 cause familial adult myoclonic epilepsy"
+            ),
             abstract=(
                 "We identified intronic pentanucleotide repeat expansions in MARCH6. "
                 "The TTTCA motif segregated with familial adult myoclonic epilepsy type 3."
