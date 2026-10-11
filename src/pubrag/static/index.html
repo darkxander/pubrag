@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pubrag</title>
+<meta name="description" content="Questions-réponses sourcées sur un corpus de publications en génétique humaine.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232a78d6'/%3E%3Cpath d='M9 22V10h6.5a4 4 0 0 1 0 8H9' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+/* ------------------------------------------------------------------ tokens */
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --surface-2: #f2f1ed;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;          /* graduations d'axe uniquement */
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.10);
+  --series-1: #2a78d6;       /* question du corpus */
+  --series-2: #eb6834;       /* question hors corpus */
+  --good: #0ca30c;
+  --good-ink: #006300;
+  --serious: #ec835a;
+  --critical: #d03b3b;
+  --accent: #2a78d6;
+  --accent-ink: #1c5cab;
+  --highlight: rgba(42, 120, 214, 0.16);
+  --shadow: 0 1px 2px rgba(11, 11, 11, 0.04), 0 4px 16px rgba(11, 11, 11, 0.04);
+  --radius: 12px;
+  --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-2: #242422;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --good-ink: #0ca30c;
+    --accent: #3987e5;
+    --accent-ink: #86b6ef;
+    --highlight: rgba(57, 135, 229, 0.28);
+    --shadow: none;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-2: #242422;
+  --ink: #ffffff;
+  --ink-2: #c3c2b7;
+  --muted: #898781;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.10);
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --good-ink: #0ca30c;
+  --accent: #3987e5;
+  --accent-ink: #86b6ef;
+  --highlight: rgba(57, 135, 229, 0.28);
+  --shadow: none;
+}
+
+/* ------------------------------------------------------------------ base */
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font: 15px/1.55 var(--font);
+  font-feature-settings: "tnum" 0;
+}
+a { color: var(--accent-ink); text-underline-offset: 2px; }
+a:hover { text-decoration-thickness: 2px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.num { font-variant-numeric: tabular-nums; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 0 16px; }
+
+/* ------------------------------------------------------------------ header */
+header.top { padding: 28px 0 0; }
+.brand { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.brand h1 { margin: 0; font-size: 22px; letter-spacing: -0.01em; display: flex; align-items: center; gap: 10px; }
+.logo {
+  width: 28px; height: 28px; border-radius: 7px; background: var(--accent);
+  display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 15px;
+}
+.tagline { margin: 6px 0 0; color: var(--ink-2); max-width: 64ch; }
+.corpus-line { margin: 10px 0 0; color: var(--ink-2); font-size: 13px; }
+.theme-btn {
+  border: 1px solid var(--border); background: var(--surface); color: var(--ink-2);
+  border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer;
+}
+.theme-btn:hover { color: var(--ink); }
+
+nav.tabs { display: flex; gap: 4px; margin: 22px 0 0; border-bottom: 1px solid var(--grid); overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+nav.tabs::-webkit-scrollbar { display: none; }
+nav.tabs button {
+  border: 0; background: none; font: inherit; color: var(--ink-2); padding: 10px 14px;
+  border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; white-space: nowrap;
+}
+nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+nav.tabs button:hover { color: var(--ink); }
+
+main { padding: 24px 0 64px; }
+section[role="tabpanel"][hidden] { display: none; }
+
+.card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 18px 20px;
+}
+.card + .card, .stack > * + * { margin-top: 16px; }
+h2 { font-size: 17px; margin: 0 0 4px; letter-spacing: -0.005em; }
+h3 { font-size: 14px; margin: 0 0 8px; color: var(--ink-2); font-weight: 600; text-transform: none; }
+.lede { color: var(--ink-2); margin: 0 0 14px; max-width: 70ch; }
+
+/* ------------------------------------------------------------------ query */
+form.ask { display: flex; gap: 10px; align-items: stretch; }
+form.ask textarea {
+  flex: 1; min-height: 52px; max-height: 180px; resize: vertical;
+  font: inherit; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--axis); border-radius: 10px; padding: 13px 14px;
+}
+form.ask textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--highlight); }
+.btn {
+  font: inherit; font-weight: 600; border: 0; border-radius: 10px; padding: 0 20px;
+  background: var(--accent); color: #fff; cursor: pointer; min-height: 52px;
+}
+.btn:disabled { opacity: 0.55; cursor: progress; }
+.examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.chip {
+  font: inherit; font-size: 13px; color: var(--ink-2); background: var(--surface-2);
+  border: 1px solid transparent; border-radius: 999px; padding: 5px 11px; cursor: pointer;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.chip:hover { color: var(--ink); border-color: var(--border); }
+.chip .k { color: var(--muted); margin-right: 4px; }
+.hint { font-size: 12.5px; color: var(--ink-2); margin-top: 10px; }
+kbd {
+  font: 11px var(--mono); border: 1px solid var(--border); border-bottom-width: 2px;
+  border-radius: 4px; padding: 0 4px; background: var(--surface-2);
+}
+
+/* status badges : icône + libellé, jamais la couleur seule */
+.status {
+  display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px;
+  border-radius: 8px; padding: 7px 11px; border: 1px solid var(--border);
+  background: var(--surface-2); color: var(--ink);
+}
+.status .ico {
+  width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center;
+  color: #fff; font-size: 11px; font-weight: 700; flex: none;
+}
+.status.good .ico { background: var(--good); }
+.status.serious .ico { background: var(--serious); }
+.status.critical .ico { background: var(--critical); }
+.status .sub { color: var(--ink-2); }
+
+/* réponse */
+.answer { font-size: 15.5px; line-height: 1.65; }
+.answer p { margin: 0 0 10px; }
+.answer p:last-child { margin-bottom: 0; }
+.answer ul { margin: 0 0 10px; padding-left: 20px; }
+.cite {
+  display: inline-block; font: 600 11.5px/1 var(--mono); padding: 3px 6px; margin: 0 1px;
+  border-radius: 5px; background: var(--highlight); color: var(--accent-ink);
+  text-decoration: none; vertical-align: 1px;
+}
+.cite.bad { background: color-mix(in srgb, var(--critical) 18%, transparent); color: var(--critical); }
+.notice { color: var(--ink-2); font-size: 14px; }
+.warnings { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.spinner {
+  width: 14px; height: 14px; border-radius: 50%; display: inline-block; vertical-align: -2px;
+  border: 2px solid var(--grid); border-top-color: var(--accent); animation: spin 0.8s linear infinite;
+  margin-right: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+
+/* passages */
+.hits { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.hit { border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; background: var(--surface); }
+.hit-head { display: flex; gap: 12px; align-items: baseline; }
+.rank {
+  flex: none; width: 24px; height: 24px; border-radius: 6px; background: var(--surface-2);
+  color: var(--ink-2); display: grid; place-items: center; font-size: 12px; font-weight: 700;
+}
+.hit-title { font-weight: 600; line-height: 1.4; }
+.hit-title a { color: var(--ink); text-decoration: none; }
+.hit-title a:hover { text-decoration: underline; }
+.hit-cite { font-size: 12.5px; color: var(--ink-2); margin-top: 2px; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0 36px; }
+.meta span {
+  font-size: 12px; color: var(--ink-2); background: var(--surface-2); border-radius: 6px; padding: 2px 8px;
+}
+.meta b { color: var(--ink); font-weight: 600; }
+.excerpt { margin: 10px 0 0 36px; color: var(--ink); font-size: 14px; line-height: 1.6; }
+.excerpt.clamp { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.excerpt mark { background: var(--highlight); color: inherit; border-radius: 3px; padding: 0 1px; }
+.more {
+  margin: 6px 0 0 36px; border: 0; background: none; padding: 0; font: inherit; font-size: 13px;
+  color: var(--accent-ink); cursor: pointer;
+}
+
+/* ------------------------------------------------------------------ eval */
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+.tile .lbl { font-size: 12.5px; color: var(--ink-2); }
+.tile .val { font-size: 28px; font-weight: 650; letter-spacing: -0.02em; margin-top: 2px; }
+.tile .sub { font-size: 12px; color: var(--ink-2); }
+
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: var(--ink-2); margin: 0 0 12px; }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.mk { display: inline-block; flex: none; }
+.mk.in { width: 10px; height: 10px; border-radius: 50%; background: var(--series-1); }
+.mk.out { width: 9px; height: 9px; background: var(--series-2); transform: rotate(45deg); }
+.mk.thr { width: 0; height: 14px; border-left: 2px dashed var(--ink-2); }
+
+.dotplot { position: relative; padding-top: 24px; }
+.dp-row { display: grid; grid-template-columns: minmax(0, 42%) minmax(0, 1fr); align-items: center; min-height: 28px; }
+.dp-row:hover { background: var(--surface-2); border-radius: 6px; }
+.dp-label {
+  font-size: 13px; color: var(--ink); padding-right: 12px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.dp-track { position: relative; height: 28px; }
+.dp-track::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 1px solid var(--grid); }
+.dp-dot {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.dp-dot.in { width: 11px; height: 11px; border-radius: 50%; background: var(--series-1); }
+.dp-dot.out { width: 10px; height: 10px; background: var(--series-2); transform: translate(-50%, -50%) rotate(45deg); }
+.dp-overlay { position: absolute; pointer-events: none; }
+.dp-thr { position: absolute; top: 0; bottom: 0; border-left: 2px dashed var(--ink-2); }
+.dp-thr-label {
+  position: absolute; top: -20px; transform: translateX(-50%); font-size: 11.5px;
+  color: var(--ink-2); white-space: nowrap; background: var(--surface); padding: 0 4px;
+}
+.dp-axis { display: grid; grid-template-columns: minmax(0, 42%) minmax(0, 1fr); margin-top: 4px; }
+.dp-ticks { position: relative; height: 18px; border-top: 1px solid var(--axis); }
+.dp-ticks span { position: absolute; top: 3px; transform: translateX(-50%); font-size: 11px; color: var(--muted); }
+.dp-axis-title { font-size: 12px; color: var(--ink-2); grid-column: 2; margin-top: 4px; }
+.reading { margin: 14px 0 0; font-size: 14px; color: var(--ink); max-width: 72ch; }
+
+.tooltip {
+  position: fixed; z-index: 10; pointer-events: none; max-width: 300px;
+  background: var(--ink); color: var(--surface); border-radius: 8px; padding: 8px 10px;
+  font-size: 12.5px; line-height: 1.45; box-shadow: 0 4px 18px rgba(0,0,0,.18);
+}
+.tooltip[hidden] { display: none; }
+.tooltip b { font-weight: 600; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+th { font-weight: 600; color: var(--ink-2); font-size: 12.5px; }
+td.r, th.r { text-align: right; }
+.scroll { overflow-x: auto; }
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; white-space: nowrap; }
+.pill .dot { width: 8px; height: 8px; border-radius: 50%; }
+.pmids { font: 12px var(--mono); color: var(--ink-2); }
+.pmids .hitp { color: var(--good-ink); font-weight: 700; }
+
+/* corpus */
+.bar { height: 6px; border-radius: 3px; background: var(--series-1); min-width: 2px; }
+.bar-cell { display: flex; align-items: center; gap: 8px; min-width: 120px; }
+.bar-cell .b { flex: 1; }
+.src { font-size: 12px; border-radius: 6px; padding: 2px 8px; white-space: nowrap; background: var(--surface-2); color: var(--ink-2); }
+.src.full { background: var(--highlight); color: var(--accent-ink); font-weight: 600; }
+
+.err { color: var(--critical); }
+.empty { color: var(--ink-2); text-align: center; padding: 28px 12px; }
+
+footer { color: var(--ink-2); font-size: 12.5px; padding: 0 0 32px; }
+
+/* ------------------------------------------------------------------ mobile */
+@media (max-width: 720px) {
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  form.ask { flex-direction: column; }
+  .btn { min-height: 46px; }
+  .meta, .excerpt, .more { margin-left: 0; }
+  .dp-row, .dp-axis { grid-template-columns: minmax(0, 38%) minmax(0, 1fr); }
+  .dp-label { font-size: 12px; }
+  .hide-sm { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1><span class="logo" aria-hidden="true">p</span>pubrag</h1>
+      <button class="theme-btn" id="theme" type="button" aria-label="Changer de thème">Thème : auto</button>
+    </div>
+    <p class="tagline">Questions-réponses sourcées sur mes publications en génétique humaine.
+      Chaque affirmation cite son article ; hors du corpus, le système refuse.</p>
+    <p class="corpus-line num" id="corpus-line">Chargement du corpus…</p>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button role="tab" id="t-ask" aria-controls="p-ask" aria-selected="true">Interroger</button>
+      <button role="tab" id="t-eval" aria-controls="p-eval" aria-selected="false" tabindex="-1">Évaluation</button>
+      <button role="tab" id="t-corpus" aria-controls="p-corpus" aria-selected="false" tabindex="-1">Corpus</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ============================================================ INTERROGER -->
+    <section role="tabpanel" id="p-ask" aria-labelledby="t-ask">
+      <div class="card">
+        <form class="ask" id="ask-form">
+          <label for="q" class="visually-hidden" style="position:absolute;left:-9999px">Question</label>
+          <textarea id="q" name="q" rows="1" placeholder="Posez une question sur le corpus — en français ou en anglais" required></textarea>
+          <button class="btn" id="go" type="submit">Rechercher</button>
+        </form>
+        <div class="examples" id="examples" aria-label="Exemples"></div>
+        <p class="hint"><kbd>Entrée</kbd> pour lancer, <kbd>Maj</kbd>+<kbd>Entrée</kbd> pour un saut de ligne.
+          La recherche fonctionne sans clé API ; la réponse rédigée en demande une.</p>
+      </div>
+
+      <div id="results" class="stack" style="margin-top:16px"></div>
+    </section>
+
+    <!-- ============================================================ ÉVALUATION -->
+    <section role="tabpanel" id="p-eval" aria-labelledby="t-eval" hidden>
+      <div class="stack">
+        <div class="tiles" id="tiles"></div>
+
+        <div class="card">
+          <h2>Le garde-fou amont : relief de chaque question</h2>
+          <p class="lede">Le <em>relief</em> mesure l'écart entre le passage le plus proche et le passage médian.
+            Une question couverte par le corpus présente un pic ; une question hors sujet est uniformément moyenne
+            avec tout. À gauche du seuil, le système refuse <strong>sans appeler le modèle</strong>.</p>
+          <div class="legend" id="dp-legend">
+            <span><i class="mk in" aria-hidden="true"></i>Question du corpus</span>
+            <span><i class="mk out" aria-hidden="true"></i>Question hors corpus</span>
+            <span><i class="mk thr" aria-hidden="true"></i><span id="thr-legend">Seuil de refus</span></span>
+          </div>
+          <div id="dotplot" class="dotplot" role="img" aria-describedby="reading"></div>
+          <p class="reading" id="reading"></p>
+        </div>
+
+        <div class="card">
+          <h2>Détail par question</h2>
+          <p class="lede">Rappel@k : part des sources attendues présentes parmi les passages retrouvés.
+            En gras, les PMID attendus effectivement retrouvés.</p>
+          <div class="scroll"><table id="eval-table"></table></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ CORPUS -->
+    <section role="tabpanel" id="p-corpus" aria-labelledby="t-corpus" hidden>
+      <div class="card">
+        <h2>Publications indexées</h2>
+        <p class="lede">Récupérées à l'exécution depuis PubMed. Le texte intégral n'est indexé que sous licence
+          Creative Commons ; sinon, seul le résumé l'est — d'où l'écart de passages entre articles.</p>
+        <div class="scroll"><table id="corpus-table"></table></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Recherche hybride dense (<span class="num">bge-small-en-v1.5</span>) + BM25, fusion RRF ·
+    <a href="https://github.com/darkxander/pubrag">Code source</a> ·
+    <a href="/docs">API</a>
+  </footer>
+</div>
+
+<div class="tooltip" id="tip" role="tooltip" hidden></div>
+
+<script>
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const fr = (x, d = 3) => Number(x).toLocaleString("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d });
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const REGIME = { semantic: "Sémantique", lexical: "Lexical", out_of_corpus: "Hors corpus" };
+
+async function api(path, body) {
+  const opts = body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {};
+  const res = await fetch(path, opts);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const e = new Error(typeof data.detail === "string" ? data.detail : `Erreur HTTP ${res.status}`);
+    e.status = res.status;
+    throw e;
+  }
+  return data;
+}
+
+/* ------------------------------------------------------------- thème */
+const THEMES = ["auto", "light", "dark"];
+const THEME_LABEL = { auto: "Thème : auto", light: "Thème : clair", dark: "Thème : sombre" };
+function applyTheme(t) {
+  if (t === "auto") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", t);
+  $("#theme").textContent = THEME_LABEL[t];
+}
+let theme = "auto";
+try { theme = localStorage.getItem("pubrag-theme") || "auto"; } catch (_) {}
+if (!THEMES.includes(theme)) theme = "auto";
+applyTheme(theme);
+$("#theme").addEventListener("click", () => {
+  theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length];
+  applyTheme(theme);
+  try { localStorage.setItem("pubrag-theme", theme); } catch (_) {}
+});
+
+/* ------------------------------------------------------------- onglets */
+const tabs = [...document.querySelectorAll('[role="tab"]')];
+function selectTab(tab) {
+  tabs.forEach((t) => {
+    const on = t === tab;
+    t.setAttribute("aria-selected", on);
+    t.tabIndex = on ? 0 : -1;
+    $("#" + t.getAttribute("aria-controls")).hidden = !on;
+  });
+  try { history.replaceState(null, "", "#" + tab.id.slice(2)); } catch (_) {}
+}
+tabs.forEach((t, i) => {
+  t.addEventListener("click", () => selectTab(t));
+  t.addEventListener("keydown", (e) => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    const next = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+    next.focus(); selectTab(next);
+  });
+});
+function tabFromHash() {
+  const t = tabs.find((t) => "#" + t.id.slice(2) === location.hash);
+  if (t && t.getAttribute("aria-selected") !== "true") selectTab(t);
+}
+window.addEventListener("hashchange", tabFromHash);
+tabFromHash();
+
+/* ------------------------------------------------------------- surlignage */
+const STOP = new Set(("le la les un une des de du et est sont quel quelle quels quelles que qui quoi dans pour par sur " +
+  "avec ce cet cette ces au aux en il elle on ne pas plus ou se sa son ses leur entre comment pourquoi ont ete etre fait sait " +
+  "the an of and or in on at to for with by is are was were be what which who how why does do did this that these those " +
+  "it its from as about lien").split(" "));
+const fold = (s) => s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase();
+function queryTerms(q) {
+  return [...new Set((fold(q).match(/[a-z0-9]+/g) || []).filter((t) => t.length >= 3 && !STOP.has(t)))];
+}
+function highlight(text, terms) {
+  const safe = esc(text);
+  if (!terms.length) return safe;
+  const re = new RegExp("\\b(" + terms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")[a-z0-9]*", "gi");
+  return safe.replace(re, "<mark>$&</mark>");
+}
+
+/* ------------------------------------------------------------- rendu réponse */
+function renderAnswer(text, hitPmids) {
+  // Markdown minimal : paragraphes, listes, gras. Le reste est échappé.
+  const blocks = String(text).trim().split(/\n{2,}/);
+  return blocks.map((b) => {
+    let html = esc(b)
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\[PMID:\s*(\d+)\]/g, (_, p) => {
+        const ok = hitPmids.has(p);
+        const title = ok ? "Source fournie au modèle" : "PMID absent du contexte fourni";
+        return `<a class="cite${ok ? "" : " bad"}" href="https://pubmed.ncbi.nlm.nih.gov/${p}/" target="_blank" rel="noopener" title="${title}">PMID:${p}</a>`;
+      });
+    const lines = html.split("\n");
+    if (lines.every((l) => /^\s*[-*•]\s+/.test(l))) {
+      return "<ul>" + lines.map((l) => "<li>" + l.replace(/^\s*[-*•]\s+/, "") + "</li>").join("") + "</ul>";
+    }
+    return "<p>" + lines.join("<br>") + "</p>";
+  }).join("");
+}
+
+function statusBadge(kind, icon, label, sub) {
+  return `<div class="status ${kind}"><span class="ico" aria-hidden="true">${icon}</span>` +
+    `<span>${esc(label)}${sub ? ` <span class="sub">— ${esc(sub)}</span>` : ""}</span></div>`;
+}
+
+function guardrailBadge(g) {
+  const v = `relief ${fr(g.relief)} · seuil ${fr(g.min_relief)}`;
+  return g.ok
+    ? statusBadge("good", "✓", "Question couverte par le corpus", v)
+    : statusBadge("serious", "!", "Hors corpus : refus sans appel au modèle", v);
+}
+
+function renderHits(hits, terms) {
+  if (!hits.length) return `<p class="empty">Aucun passage retrouvé.</p>`;
+  return `<ol class="hits">` + hits.map((h) => {
+    const body = h.text.startsWith(h.title) ? h.text.slice(h.title.length).trim() : h.text;
+    const bm = h.bm25_rank == null ? "—" : "n°" + h.bm25_rank;
+    return `<li class="hit">
+      <div class="hit-head">
+        <span class="rank num" aria-label="Rang ${h.rank}">${h.rank}</span>
+        <div>
+          <div class="hit-title"><a href="${esc(h.url)}" target="_blank" rel="noopener">${esc(h.title)}</a></div>
+          <div class="hit-cite">${esc(h.citation)}</div>
+        </div>
+      </div>
+      <div class="meta num">
+        <span title="Similarité sémantique avec la question">cosinus <b>${fr(h.dense_score)}</b></span>
+        <span title="Rang dans la recherche lexicale BM25">BM25 <b>${bm}</b></span>
+        <span title="Score de fusion Reciprocal Rank Fusion">RRF <b>${fr(h.rrf_score, 4)}</b></span>
+      </div>
+      <p class="excerpt clamp">${highlight(body, terms)}</p>
+      <button class="more" type="button" aria-expanded="false">Afficher tout le passage</button>
+    </li>`;
+  }).join("") + `</ol>`;
+}
+
+/* ------------------------------------------------------------- interroger */
+const form = $("#ask-form"), input = $("#q"), go = $("#go"), out = $("#results");
+let requestId = 0;
+
+input.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+});
+out.addEventListener("click", (e) => {
+  const btn = e.target.closest(".more");
+  if (!btn) return;
+  const ex = btn.previousElementSibling;
+  const open = ex.classList.toggle("clamp") === false;
+  btn.setAttribute("aria-expanded", open);
+  btn.textContent = open ? "Réduire" : "Afficher tout le passage";
+});
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const q = input.value.trim();
+  if (q.length < 2) return;
+  const id = ++requestId;
+  const terms = queryTerms(q);
+  go.disabled = true;
+  out.innerHTML = `<div class="card"><span class="spinner" aria-hidden="true"></span>Recherche des passages…</div>`;
+
+  let search;
+  try {
+    search = await api("/search", { question: q });
+  } catch (err) {
+    if (id === requestId) {
+      out.innerHTML = `<div class="card err">Recherche impossible : ${esc(err.message)}</div>`;
+      go.disabled = false;
+    }
+    return;
+  }
+  if (id !== requestId) return;
+
+  const hitPmids = new Set(search.hits.map((h) => h.pmid));
+  out.innerHTML = `
+    <div>${guardrailBadge(search.guardrail)}</div>
+    <div class="card" id="answer-card">
+      <h3>Réponse</h3>
+      <div id="answer"><span class="spinner" aria-hidden="true"></span><span class="notice">${
+        search.guardrail.ok ? "Rédaction par le modèle…" : "Vérification…"}</span></div>
+    </div>
+    <div class="card">
+      <h3>Passages transmis au modèle <span class="num" style="font-weight:400">(${search.hits.length})</span></h3>
+      ${renderHits(search.hits, terms)}
+    </div>`;
+
+  try {
+    const ans = await api("/ask", { question: q });
+    if (id !== requestId) return;
+    let html = ans.refused
+      ? `<p class="notice">${esc(ans.answer)}</p>`
+      : `<div class="answer">${renderAnswer(ans.answer, hitPmids)}</div>`;
+    if (!ans.refused && ans.warnings.length) {
+      html += `<ul class="warnings">` + ans.warnings.map((w) =>
+        `<li>${statusBadge("critical", "!", "Garde-fou aval", w)}</li>`).join("") + `</ul>`;
+    } else if (!ans.refused) {
+      html += `<ul class="warnings"><li>${statusBadge("good", "✓", "Citations vérifiées",
+        "chaque PMID cité figure parmi les passages fournis")}</li></ul>`;
+    }
+    $("#answer").innerHTML = html;
+  } catch (err) {
+    if (id !== requestId) return;
+    $("#answer").innerHTML = err.status === 503
+      ? `<p class="notice">Génération indisponible : aucune clé API Anthropic n'est configurée sur ce serveur.
+         Les passages ci-dessous ont été retrouvés sans le modèle — c'est exactement ce qu'il recevrait.</p>`
+      : `<p class="err">Génération impossible : ${esc(err.message)}</p>`;
+  } finally {
+    if (id === requestId) go.disabled = false;
+  }
+});
+
+/* ------------------------------------------------------------- évaluation */
+function niceDomain(values) {
+  const step = 0.02;
+  let lo = Math.floor(Math.min(...values) / step) * step;
+  let hi = Math.ceil(Math.max(...values) / step) * step;
+  if (hi - lo < step * 2) hi = lo + step * 2;
+  const ticks = [];
+  for (let t = lo; t <= hi + 1e-9; t += step) ticks.push(+t.toFixed(4));
+  return { lo, hi, ticks };
+}
+
+function renderEval(data) {
+  const { summary: s, results } = data;
+  const pct = (v) => (v == null ? "—" : fr(v, 2));
+  $("#tiles").innerHTML = [
+    ["Rappel global", pct(s.recall_global), `rappel@${s.k}, questions du corpus`],
+    ["Lexical", pct(s.recall_by_regime.lexical), `n = ${s.count_by_regime.lexical ?? 0} · symboles de gènes`],
+    ["Sémantique", pct(s.recall_by_regime.semantic), `n = ${s.count_by_regime.semantic ?? 0} · reformulations`],
+    ["Hors corpus bloqués", `${s.out_of_corpus_refused}/${s.out_of_corpus_total}`, "en amont, sans appel au modèle"],
+  ].map(([l, v, sub]) => `<div class="tile"><div class="lbl">${l}</div><div class="val num">${v}</div><div class="sub">${sub}</div></div>`).join("");
+
+  // --- dot plot
+  const rows = [...results].sort((a, b) => b.relief - a.relief);
+  const { lo, hi, ticks } = niceDomain([...rows.map((r) => r.relief), s.min_relief]);
+  const x = (v) => ((v - lo) / (hi - lo)) * 100;
+  const dp = $("#dotplot");
+  dp.innerHTML =
+    rows.map((r, i) => {
+      const k = r.regime === "out_of_corpus" ? "out" : "in";
+      return `<div class="dp-row" data-i="${i}">
+        <div class="dp-label" title="${esc(r.question)}">${esc(r.question)}</div>
+        <div class="dp-track"><i class="dp-dot ${k}" style="left:${x(r.relief)}%"></i></div>
+      </div>`;
+    }).join("") +
+    `<div class="dp-axis"><div></div><div class="dp-ticks num">${
+      ticks.map((t) => `<span style="left:${x(t)}%">${fr(t, 2)}</span>`).join("")}</div>
+      <div class="dp-axis-title">Relief (meilleur cosinus − cosinus médian)</div></div>`;
+
+  // La ligne de seuil traverse la zone des points : on la place dans une
+  // surcouche alignée sur la colonne des pistes.
+  const overlay = document.createElement("div");
+  overlay.className = "dp-overlay";
+  overlay.innerHTML = `<div class="dp-thr" style="left:${x(s.min_relief)}%"></div>
+    <span class="dp-thr-label num" style="left:${x(s.min_relief)}%">seuil ${fr(s.min_relief)}</span>`;
+  dp.appendChild(overlay);
+  const placeOverlay = () => {
+    const tracks = dp.querySelectorAll(".dp-track");
+    if (!tracks.length) return;
+    const a = dp.getBoundingClientRect();
+    const first = tracks[0].getBoundingClientRect();
+    const last = tracks[tracks.length - 1].getBoundingClientRect();
+    overlay.style.left = first.left - a.left + "px";
+    overlay.style.width = first.width + "px";
+    overlay.style.top = first.top - a.top + "px";
+    overlay.style.height = last.bottom - first.top + "px";
+  };
+  placeOverlay();
+  new ResizeObserver(placeOverlay).observe(dp);
+  $("#thr-legend").textContent = `Seuil de refus (${fr(s.min_relief)})`;
+
+  // tooltip au survol de la ligne entière — cible plus grande que le point
+  const tip = $("#tip");
+  dp.querySelectorAll(".dp-row").forEach((el) => {
+    const r = rows[+el.dataset.i];
+    const show = (ev) => {
+      const verdict = r.refused_upstream ? "refusée en amont" : "transmise au modèle";
+      const rec = r.recall == null ? "" : `<br>Rappel@${s.k} : <b>${fr(r.recall, 2)}</b>`;
+      tip.innerHTML = `<b>${esc(r.question)}</b><br>${REGIME[r.regime] ?? r.regime} · relief <b>${fr(r.relief)}</b><br>Question ${verdict}${rec}`;
+      tip.hidden = false;
+      const px = ev.clientX ?? el.getBoundingClientRect().left + 40;
+      const py = ev.clientY ?? el.getBoundingClientRect().top;
+      const w = tip.offsetWidth;
+      tip.style.left = Math.min(px + 14, window.innerWidth - w - 8) + "px";
+      tip.style.top = py + 16 + "px";
+    };
+    el.addEventListener("mousemove", show);
+    el.addEventListener("mouseleave", () => (tip.hidden = true));
+  });
+
+  const ins = results.filter((r) => r.regime !== "out_of_corpus");
+  const outs = results.filter((r) => r.regime === "out_of_corpus");
+  if (ins.length && outs.length) {
+    const lowIn = ins.reduce((a, b) => (b.relief < a.relief ? b : a));
+    const highOut = outs.reduce((a, b) => (b.relief > a.relief ? b : a));
+    const overlap = lowIn.relief < highOut.relief;
+    $("#reading").innerHTML = overlap
+      ? `Les deux groupes se chevauchent : « ${esc(lowIn.question)} », question valide, a un relief de
+         <span class="num">${fr(lowIn.relief)}</span>, plus faible que « ${esc(highOut.question)} »
+         (<span class="num">${fr(highOut.relief)}</span>), hors corpus. Aucun seuil ne peut les séparer parfaitement.
+         Il est donc placé sous la plus basse valeur valide : ce filtre ne refuse jamais une bonne question,
+         et les questions hors corpus qu'il laisse passer sont refusées par le modèle lui-même.`
+      : `Les deux groupes sont séparés : toutes les questions valides ont un relief d'au moins
+         <span class="num">${fr(lowIn.relief)}</span> (« ${esc(lowIn.question)} »), aucune question hors corpus
+         ne dépasse <span class="num">${fr(highOut.relief)}</span> (« ${esc(highOut.question)} »).
+         Le seuil (<span class="num">${fr(s.min_relief)}</span>) est placé dans cet écart, plus près du groupe
+         hors corpus : un faux refus perdrait une bonne réponse, un faux accepté ne coûte qu'un appel au modèle,
+         qui refusera lui-même. Sur quinze questions, cette séparation reste à confirmer.`;
+  }
+
+  // --- table
+  $("#eval-table").innerHTML = `<thead><tr><th>Question</th><th>Régime</th><th class="r">Relief</th>
+    <th>Résultat</th><th class="hide-sm">Sources attendues</th></tr></thead><tbody>` +
+    results.map((r) => {
+      const isOut = r.regime === "out_of_corpus";
+      const res = isOut
+        ? (r.refused_upstream ? "Refusée en amont" : "Transmise au modèle")
+        : `Rappel ${fr(r.recall, 2)}`;
+      const got = new Set(r.retrieved_pmids);
+      const exp = r.expected_pmids.map((p) => `<span class="${got.has(p) ? "hitp" : ""}">${p}</span>`).join(", ") || "—";
+      const color = isOut ? "var(--series-2)" : "var(--series-1)";
+      return `<tr><td>${esc(r.question)}</td>
+        <td><span class="pill"><i class="dot" style="background:${color}"></i>${REGIME[r.regime] ?? r.regime}</span></td>
+        <td class="r num">${fr(r.relief)}</td><td class="num">${res}</td>
+        <td class="pmids hide-sm">${exp}</td></tr>`;
+    }).join("") + `</tbody>`;
+
+  // --- exemples de questions pour l'onglet Interroger
+  const ex = results.filter((r) => r.regime !== "out_of_corpus").slice(0, 4)
+    .concat(outs.slice(0, 1));
+  $("#examples").innerHTML = ex.map((r) =>
+    `<button type="button" class="chip" title="${esc(r.question)}"><span class="k">${
+      r.regime === "out_of_corpus" ? "hors corpus" : "exemple"}</span>${esc(r.question)}</button>`).join("");
+  $("#examples").querySelectorAll(".chip").forEach((c, i) =>
+    c.addEventListener("click", () => { input.value = ex[i].question; form.requestSubmit(); }));
+}
+
+/* ------------------------------------------------------------- corpus */
+function renderCorpus(st) {
+  const n = st.publications.length;
+  $("#corpus-line").textContent =
+    `${n} publications · ${st.passages} passages · ${st.full_text} en texte intégral · ${st.top_k} passages par réponse, ${st.max_per_doc} max. par article`;
+  const max = Math.max(...st.publications.map((p) => p.passages), 1);
+  $("#corpus-table").innerHTML = `<thead><tr><th>Année</th><th>Publication</th>
+    <th class="hide-sm">Revue</th><th>Indexé</th><th>Passages</th></tr></thead><tbody>` +
+    st.publications.map((p) => `<tr>
+      <td class="num">${esc(p.year || "—")}</td>
+      <td><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a>
+        <div class="pmids">PMID ${esc(p.pmid)}</div></td>
+      <td class="hide-sm">${esc(p.journal || "—")}</td>
+      <td><span class="src ${p.source === "pmc_oa" ? "full" : ""}">${p.source === "pmc_oa" ? "Texte intégral" : "Résumé"}</span></td>
+      <td><div class="bar-cell"><span class="num">${p.passages}</span>
+        <div class="b"><div class="bar" style="width:${(p.passages / max) * 100}%"></div></div></div></td>
+    </tr>`).join("") + `</tbody>`;
+}
+
+/* ------------------------------------------------------------- démarrage */
+api("/stats").then(renderCorpus).catch((e) => {
+  $("#corpus-line").innerHTML = `<span class="err">Serveur injoignable : ${esc(e.message)}</span>`;
+});
+api("/eval").then(renderEval).catch((e) => {
+  $("#tiles").innerHTML = `<div class="card err" style="grid-column:1/-1">Évaluation impossible : ${esc(e.message)}</div>`;
+});
+input.focus();
+</script>
+</body>
+</html>

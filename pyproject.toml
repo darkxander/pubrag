@@ -1,6 +1,6 @@
 [project]
 name = "pubrag"
-version = "0.1.0"
+version = "0.2.0"
 description = "Retrieval-augmented question answering over a personal corpus of PubMed publications"
 readme = "README.md"
 requires-python = ">=3.10"

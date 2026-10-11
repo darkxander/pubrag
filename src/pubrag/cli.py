@@ -92,6 +92,18 @@ def stats(config: Path = ConfigOption) -> None:
         console.print(f"Sources : {counts}  (pmc_oa = texte intégral, abstract = résumé seul)")
 
 
+@app.command()
+def serve(
+    host: str = typer.Option("127.0.0.1", help="Adresse d'écoute."),
+    port: int = typer.Option(8000, help="Port."),
+) -> None:
+    """Lance l'interface web et l'API sur http://127.0.0.1:8000."""
+    import uvicorn
+
+    console.print(f"Interface : [bold]http://{host}:{port}[/bold]  (Ctrl+C pour arrêter)")
+    uvicorn.run("pubrag.api:app", host=host, port=port)
+
+
 app.command(name="ingest")(ingest_cmd)
 
 if __name__ == "__main__":

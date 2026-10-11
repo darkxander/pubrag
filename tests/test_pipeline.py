@@ -1,35 +1,7 @@
-from pubrag.config import Config
 from pubrag.guardrails import REFUSAL
 from pubrag.pipeline import Pipeline
 
-
-def make_config(min_relief: float) -> Config:
-    return Config(
-        pmids=[],
-        target_tokens=60,
-        overlap_tokens=10,
-        top_k=3,
-        candidates_per_branch=10,
-        rrf_k=60,
-        max_per_doc=2,
-        min_relief=min_relief,
-        require_citations=True,
-        model="claude-sonnet-5",
-        max_tokens=500,
-        temperature=0.0,
-    )
-
-
-class FakeGenerator:
-    """Générateur factice : aucun appel réseau, réponse contrôlée."""
-
-    def __init__(self, template: str) -> None:
-        self.template = template
-        self.calls = 0
-
-    def answer(self, question, hits):
-        self.calls += 1
-        return self.template.format(pmid=hits[0].chunk.pmid)
+from .conftest import FakeGenerator, make_config
 
 
 def test_pipeline_refuses_without_calling_the_model(retriever, embedder):

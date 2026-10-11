@@ -33,6 +33,15 @@ def format_context(hits: list[Hit]) -> str:
     return "\n\n".join(blocks)
 
 
+class MissingAPIKeyError(RuntimeError):
+    """Levée quand aucune clé Anthropic n'est configurée.
+
+    Exception dédiée pour que l'API puisse la distinguer d'une vraie panne et
+    répondre « fonction indisponible » plutôt que « erreur serveur » : la
+    recherche, elle, fonctionne sans clé.
+    """
+
+
 class Generator:
     def __init__(
         self,
@@ -43,7 +52,7 @@ class Generator:
     ) -> None:
         key = api_key or os.environ.get("ANTHROPIC_API_KEY")
         if not key:
-            raise RuntimeError(
+            raise MissingAPIKeyError(
                 "ANTHROPIC_API_KEY absent. Copiez .env.example en .env et renseignez la clé."
             )
         self._client = Anthropic(api_key=key)

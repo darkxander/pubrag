@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from pubrag.chunk import Chunk
+from pubrag.config import Config
 from pubrag.embed import HashingEmbedder
 from pubrag.fetch import Document
 from pubrag.retrieve import HybridRetriever
@@ -73,3 +74,32 @@ def unit_vectors(n: int, d: int = 8) -> np.ndarray:
     rng = np.random.default_rng(0)
     m = rng.normal(size=(n, d)).astype(np.float32)
     return m / np.linalg.norm(m, axis=1, keepdims=True)
+
+
+def make_config(min_relief: float) -> Config:
+    return Config(
+        pmids=[],
+        target_tokens=60,
+        overlap_tokens=10,
+        top_k=3,
+        candidates_per_branch=10,
+        rrf_k=60,
+        max_per_doc=2,
+        min_relief=min_relief,
+        require_citations=True,
+        model="claude-sonnet-5",
+        max_tokens=500,
+        temperature=0.0,
+    )
+
+
+class FakeGenerator:
+    """Générateur factice : aucun appel réseau, réponse contrôlée."""
+
+    def __init__(self, template: str) -> None:
+        self.template = template
+        self.calls = 0
+
+    def answer(self, question, hits):
+        self.calls += 1
+        return self.template.format(pmid=hits[0].chunk.pmid)
